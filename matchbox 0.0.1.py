@@ -19,10 +19,28 @@ import time
 
 # variables
 playing = False
-usermove = ""
-location = "pregame"
+usermove = "" # placeholder variable for all the input commands
+location = "pregame" # the variable that dictates the game phase and the room the player is in
+
+locationsVisited = [] # variable that holds all the rooms the player has been to, to ensure that the room description doesn't play every time the player goes there
+
+playersbedroom = ["closet//clothing", "lamp", "phone", "bedside table//watch", "bedroom keys"]
+
+house = [playersbedroom]
+
+# house array: 
+# 0: player's bedroom
+# 1: 
+# 2: 
+# 3: 
+# 4: 
+# 5: 
+# 6: 
+# 7: 
+# 8: 
 
 # pre-game intro section
+
 
 time.sleep(2)
 
@@ -38,6 +56,14 @@ while(not(playing)):
     if usermove == "p":
         location = "initialising"
         playing = True
+        time.sleep(0.5)
+        print("fyi: a lot of information in this game will be presented on timers, so it's easier to read.")
+        print("if nothing's happening for a couple seconds, just give it a moment, you're reading quicker than I thought you would.")
+        time.sleep(5)
+        print("\n\n\nhave fun!\n\n")
+        time.sleep(2)
+        print(15*"\n\n")
+        time.sleep(0.5)
 
     elif usermove == "h":
         # explain all the commands
@@ -51,6 +77,13 @@ while(not(playing)):
         print("gochu. cya!")
         location = "exit"
         playing = True
+
+    elif usermove == "pp":
+        # dev shortcut to skip the long asf intro cutscene when testing
+        print("ok dev")
+        location = "playerbedroom"
+        playing = True
+
     else: 
         print("didn't catch that.")
         print("to select what you want to do, type the letter in square brackets")
@@ -60,6 +93,8 @@ while(not(playing)):
 
 while(playing):
     if location == "initialising":
+
+        # initialisation text that just describes the scene the first time the player's going thru it
         print("You wake up in your room")
         time.sleep(2)
         print("It's in the middle of your school holidays, so you aren't stressed about getting up immediately.")
@@ -83,4 +118,9 @@ while(playing):
 
         location = "playerbedroom"
     if location == "playerbedroom":
-        pass
+        if not("playerbedroom" in locationsVisited):
+            print("You curse yourself for your inaction and look around your room at everything you've got.")
+            print("You find ")
+            locationsVisited.append("playerbedroom")
+
+    usermove = input("What would you like to do?")
