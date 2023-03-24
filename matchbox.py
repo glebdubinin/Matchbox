@@ -18,22 +18,28 @@ print("\n\n\n\n\n")
 import time
 import math
 
+
 # variables
 playing = False
+debugMode = False
 usermove = "" # placeholder variable for all the input commands
+inputValid = False 
 location = "pregame" # the variable that dictates the game phase and the room the player is in
+locationint = 0
 
 locationsVisited = [] # variable that holds all the rooms the player has been to, to ensure that the room description doesn't play every time the player goes there
 
-playersbedroom = ["closet//clothing", "lamp", "phone", "bedside table//watch", "bedroom keys"]
+inventory = []
 
-playersbedroomDescription = ["You look around the bedroom you've lived your whole life in.",
+playersbedroom = ["closet//clothing", "lamp", "phone", "bedside table//watch", "bedside table//bedroom keys"] # all the items in the players bedroom
+
+playersbedroomDescription = ["You look around the bedroom you've lived in for as long as you can remember.",
                              "There'a window for you to admire the flames rapidly approaching your house,",
                              "And a desk-full of old schoolwork and revision textbooks your parents insist that you keep for whatever reaosn.",
                              "You take one last longing look at all the plush toys around your pillow,",
                              "The posters on your walls of the comic book heroes you idolised,",
                              "The action figures you collected when you were young,",
-                             "And you get back to your mission of saving the house."]
+                             "And you get back to your mission of saving the house."] # a list of the lines that are used for the description of the room
 
 house = [playersbedroom]
 
@@ -48,12 +54,17 @@ house = [playersbedroom]
 # 7: 
 # 8: 
 
+
 # functions
 
-def printDescription(room):
+def printDescription(room, debugMode): # called when reading out the description of a room when it's entered for the first time or the "observe" command is used.
     for i in range(len(room)):
         print(room[i])
-        time.sleep(math.ceil(len(room[i]) / 40))
+        if not(debugMode):
+            time.sleep(math.ceil(len(room[i]) / 35))
+# goes through the arrays of messages for the designated room line by line, prints one, and waits for a certain amount of time
+# dependant on the length of the previous message before going to the next line.
+
 
 
 # pre-game intro section
@@ -61,7 +72,7 @@ def printDescription(room):
 
 time.sleep(2)
 
-while(not(playing)):
+while(not(playing)): # intro menu
       
     print(" [P] Play the game")
     print(" [H] How to play")
@@ -70,7 +81,8 @@ while(not(playing)):
 
     usermove = input("What would you like to do? ").lower()
     print("\n\n\n")
-    if usermove == "p":
+    if usermove == "p": #initialisation
+
         location = "initialising"
         playing = True
         time.sleep(0.5)
@@ -92,13 +104,13 @@ while(not(playing)):
 
     elif usermove == "x":
         print("gochu. cya!")
-        location = "exit"
-        playing = True
+        quit()
 
     elif usermove == "pp":
         # dev shortcut to skip the long asf intro cutscene when testing
         print("ok dev")
         location = "playerbedroom"
+        debugMode = True
         playing = True
 
     else: 
@@ -109,8 +121,15 @@ while(not(playing)):
 ### the game.
 
 while(playing):
+    if usermove.startswith("use "):
+        usermove = usermove.replace("use ", "")
+        usermove = usermove.strip()
+        if ' ' in usermove:
+            pass
+        else:
+            if usermove in inventory:
+                pass # add all the interactions
     if location == "initialising":
-
         # initialisation text that just describes the scene the first time the player's going thru it
         print("You wake up in your room")
         time.sleep(2)
@@ -132,12 +151,16 @@ while(playing):
         time.sleep(4)
         print("And they're headed straight for you.")
         time.sleep(4)
+        print("\n\n")
 
         location = "playerbedroom"
     if location == "playerbedroom":
-        if not("playerbedroom" in locationsVisited):
-            printDescription(playersbedroomDescription)
-            print("You curse yourself for your sleepiness and look around your room at everything you can use")
+        if "playerbedroom" not in locationsVisited:
+            printDescription(playersbedroomDescription, debugMode)
+            print("\n\nYou curse yourself for your sleepiness and look around your room at everything you can use")
+            print("You see a !closet! in the corner of the room, a [lamp] and your [phone] on your !bedside_table!.")
             locationsVisited.append("playerbedroom")
+        if usermove.startswith("use"):
+            usermove.replace("use ", "")
 
     usermove = input("What would you like to do?")
