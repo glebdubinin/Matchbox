@@ -16,6 +16,7 @@ print("\n\n\n\n\n")
 
 # imports
 import time
+import math
 
 # variables
 playing = False
@@ -25,6 +26,14 @@ location = "pregame" # the variable that dictates the game phase and the room th
 locationsVisited = [] # variable that holds all the rooms the player has been to, to ensure that the room description doesn't play every time the player goes there
 
 playersbedroom = ["closet//clothing", "lamp", "phone", "bedside table//watch", "bedroom keys"]
+
+playersbedroomDescription = ["You look around the bedroom you've lived your whole life in.",
+                             "There'a window for you to admire the flames rapidly approaching your house,",
+                             "And a desk-full of old schoolwork and revision textbooks your parents insist that you keep for whatever reaosn.",
+                             "You take one last longing look at all the plush toys around your pillow,",
+                             "The posters on your walls of the comic book heroes you idolised,",
+                             "The action figures you collected when you were young,",
+                             "And you get back to your mission of saving the house."]
 
 house = [playersbedroom]
 
@@ -38,6 +47,14 @@ house = [playersbedroom]
 # 6: 
 # 7: 
 # 8: 
+
+# functions
+
+def printDescription(room):
+    for i in range(len(room)):
+        print(room[i])
+        time.sleep(math.ceil(len(room[i]) / 40))
+
 
 # pre-game intro section
 
@@ -119,8 +136,8 @@ while(playing):
         location = "playerbedroom"
     if location == "playerbedroom":
         if not("playerbedroom" in locationsVisited):
-            print("You curse yourself for your inaction and look around your room at everything you've got.")
-            print("You find ")
+            printDescription(playersbedroomDescription)
+            print("You curse yourself for your sleepiness and look around your room at everything you can use")
             locationsVisited.append("playerbedroom")
 
     usermove = input("What would you like to do?")
