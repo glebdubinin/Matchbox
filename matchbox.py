@@ -21,7 +21,8 @@ import math
 
 # variables
 playing = False
-debugMode = False
+debugMode = False # dev mode skipping all the time delays
+noPower = False # what dictates when the player realises that there's no power
 usermove = "" # placeholder variable for all the input commands
 inputValid = False 
 location = "pregame" # the variable that dictates the game phase and the room the player is in
@@ -57,11 +58,18 @@ house = [playersbedroom]
 
 # functions
 
+def wait(delay, debugMode):
+    if not(debugMode):
+        time.sleep(delay)
+
 def printDescription(room, debugMode): # called when reading out the description of a room when it's entered for the first time or the "observe" command is used.
     for i in range(len(room)):
         print(room[i])
-        if not(debugMode):
-            time.sleep(math.ceil(len(room[i]) / 35))
+
+        #█▀█ █▀▀ █▀▄▀█ █▀█ █░█ █▀▀   █▀▄▀█ █▀▀
+        #█▀▄ ██▄ █░▀░█ █▄█ ▀▄▀ ██▄   █░▀░█ ██▄
+        if 1==2:
+            wait(math.ceil(len(room[i]) / 35), debugMode)
 # goes through the arrays of messages for the designated room line by line, prints one, and waits for a certain amount of time
 # dependant on the length of the previous message before going to the next line.
 
@@ -70,7 +78,10 @@ def printDescription(room, debugMode): # called when reading out the description
 # pre-game intro section
 
 
-time.sleep(2)
+#█▀█ █▀▀ █▀▄▀█ █▀█ █░█ █▀▀   █▀▄▀█ █▀▀
+#█▀▄ ██▄ █░▀░█ █▄█ ▀▄▀ ██▄   █░▀░█ ██▄
+
+# wait(2, debugMode)
 
 while(not(playing)): # intro menu
       
@@ -79,20 +90,20 @@ while(not(playing)): # intro menu
     print(" [A] Actual Bushfire Survival Info")
     print(" [X] Quit")
 
-    usermove = input("What would you like to do? ").lower()
+    usermove = input("What would you like to do?   ").lower()
     print("\n\n\n")
     if usermove == "p": #initialisation
 
         location = "initialising"
         playing = True
-        time.sleep(0.5)
+        wait(0.5, debugMode)
         print("fyi: a lot of information in this game will be presented on timers, so it's easier to read.")
         print("if nothing's happening for a couple seconds, just give it a moment, you're reading quicker than I thought you would.")
-        time.sleep(5)
+        wait(5, debugMode)
         print("\n\n\nhave fun!\n\n")
-        time.sleep(2)
+        wait(2, debugMode)
         print(15*"\n\n")
-        time.sleep(0.5)
+        wait(0.5, debugMode)
 
     elif usermove == "h":
         # explain all the commands
@@ -121,38 +132,37 @@ while(not(playing)): # intro menu
 ### the game.
 
 while(playing):
-    if usermove.startswith("use "):
-        usermove = usermove.replace("use ", "")
-        usermove = usermove.strip()
-        if ' ' in usermove:
-            pass
-        else:
-            if usermove in inventory:
-                pass # add all the interactions
-    if location == "initialising":
+ 
+
+    #█▀█ █▀▀ █▀▄▀█ █▀█ █░█ █▀▀   █▀▄▀█ █▀▀
+    #█▀▄ ██▄ █░▀░█ █▄█ ▀▄▀ ██▄   █░▀░█ ██▄
+
+    if location == "initialising" and 1==2:  # <- remove the 1==2
         # initialisation text that just describes the scene the first time the player's going thru it
         print("You wake up in your room")
-        time.sleep(2)
+        wait(2, debugMode)
         print("It's in the middle of your school holidays, so you aren't stressed about getting up immediately.")
-        time.sleep(2.5)
+        wait(2.5, debugMode)
         print("Besides, your parents aren't gonna be home for another 2 days, so there's not gonna be anyone nagging you for sleeping in.")
-        time.sleep(2.5)
+        wait(2.5, debugMode)
         print("After a while of tossing and turning, your sheets start to turn chilly and you aren't particularly comfy.")
-        time.sleep(2.5)
+        wait(2.5, debugMode)
         print("You get up, and pull the blinds open.")
-        time.sleep(2.5)
+        wait(2.5, debugMode)
         print("Your stomach drops.")
-        time.sleep(3)
+        wait(3, debugMode)
         print("The warnings came true.")
-        time.sleep(3)
+        wait(3, debugMode)
         print("You're not prepared.")
-        time.sleep(3)
+        wait(3, debugMode)
         print("The bushes, trees and all the forest around the house you've lived your life in are alight.")
-        time.sleep(4)
+        wait(4, debugMode)
         print("And they're headed straight for you.")
-        time.sleep(4)
+        wait(4, debugMode)
         print("\n\n")
 
+        location = "playerbedroom"
+    elif location == "initialising":
         location = "playerbedroom"
     if location == "playerbedroom":
         if "playerbedroom" not in locationsVisited:
@@ -163,4 +173,66 @@ while(playing):
         if usermove.startswith("use"):
             usermove.replace("use ", "")
 
-    usermove = input("What would you like to do?")
+    usermove = input("\nWhat would you like to do?   ").lower()
+
+    # input processing 
+
+    if usermove.startswith("use "):  # use command
+
+        usermove = usermove.replace("use ", "")
+        usermove = usermove.strip()
+        if ' ' in usermove:
+            pass # interactions between two objects
+        else:
+            if usermove in inventory: # is the item in the player's inventory?
+                pass
+            else:
+                if usermove in house[locationint]: # is the item in the room that the player's currently in?
+
+                    if usermove == "lamp": # player's bedroom lamp
+                        if noPower:
+                            print("You already know there's no power, it doesn't turn on.")
+                        else:
+                            print("you flick on the lamp. ")
+                            wait(1, debugMode)
+                            print("it doesn't turn on. ")
+                            wait(0.5, debugMode)
+                            print("you toggle the switch a couple more times, before settling with the fact that there's no power.")
+
+                    if usermove == "phone":
+                        if noPower:
+                            print("You already know there's no power, your phone doesn't work")
+                        else:
+                            print("You double tap on your phone screen")
+                            wait(1, debugMode)
+                            print("nothing.")
+                            print("you press the power button.")
+                            wait(1.5, debugMode)
+                            print("nothing.")
+                            print("You hold down the power button for a few seconds")
+                            wait(2, debugMode)
+                            print("1...")
+                            wait(1, debugMode)
+                            print("2...")
+                            wait(1, debugMode)
+                            print("3...")
+                            wait(3, debugMode)
+                            print("█████████████████████")
+                            print("███░              ███")
+                            print("███░              █████")
+                            print("███░              ███")
+                            print("█████████████████████\n\n")
+                            wait(2, debugMode)
+                            print("The power cut out overnight.")
+
+    else:
+
+        placeholder = ""  # what happens if the command is not recognized
+        spaceSeen = False
+        usermove += " "
+        for i in range(len(usermove)):
+            if not(spaceSeen) and usermove[i] != ' ':
+                placeholder += usermove[i]
+            else:
+                spaceSeen = True
+        print("sorry, I don't recognize the command \""+placeholder+"\".")
