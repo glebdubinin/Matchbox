@@ -18,12 +18,13 @@ print("\n\n\n\n\n")
 import time
 import math
 import os
-
+import random
 
 # variables
 playing = False
 debugMode = False # dev mode skipping all the time delays
 noPower = False # what dictates when the player realises that there's no power
+dirtyWatah = False # does the player know they can't drink from taps
 hasWatch = False # does the player have the watch?
 hasClothes = False
 usermove = "" # placeholder variable for all the input commands
@@ -33,6 +34,13 @@ locationint = 0
 container = "" #the name of the container the player is currently looking in (blank if they're in a room)
 room = "playersbedroom" # the name of the room the player's currently in - less precise than location or container
 
+# stats:
+turns = 0 # the number of commands the player executed
+roomsExplored = []
+windowsSecured = 0
+gutterProtected = False
+easterEggs = 0
+
 locationsVisited = [] # variable that holds all the rooms the player has been to, to ensure that the room description doesn't play every time the player goes there
 
 inventory = []
@@ -41,22 +49,25 @@ carrier = "hands"
 
 # //NOTE: items 
 
-playersbedroom = ["!closet!", "!bedside_table!", "closet//clothing", "lamp", "phone", "bedside_table//watch", "bedside_table//keys", "bedroom_door"] # all the items in the players bedroom
+playersbedroom = ["!closet!", "!bedside_table!", "closet//clothing", "lamp", "phone", "bedside_table//watch", "bedside_table//keys", "bedroom_door", "window"] # all the items in the players bedroom
 livingroom = ["dog", "empty_water_bowl", "locked_sliding_door", "water_bottle"]
-diningarea = ["napkins", "water_bottle", "google_home"]
-kitchen = ["sink", "hand_towels", "!fridge!", "fridge//water_bottle"]
-bathroom = ["toilet", "sink", "detachable_shower_head"]
-entryway = ["stool", "flower_vase", "backpack"]
-parentsbedroom = ["!bedside_table!", "bedside_table//keys"]
-garage = ["!shelves!", "shelves//handbook", "shelves//remote", "shelves//keychain", "ladder"]
-backyard = ["garden_hose", "gutter"]
+diningarea = ["napkins", "water_bottle", "google_home", "window"]
+kitchen = ["sink", "hand_towels", "!fridge!", "fridge//water_bottle", "window"]
+bathroom = ["toilet", "sink", "movable_shower_head", "towels", "window"]
+entryway = ["stool", "flower_vase", "backpack", "front_door"]
+parentsbedroom = ["!bedside_table!", "bedside_table//keys", "window"]
+garage = ["!shelves!", "shelves//handbook", "shelves//remote", "shelves//keychain"]
+backyard = ["garden_hose", "gutter", "locked_sliding_door"]
+garden = ["empty_watering_can", "ladder"]
+streets = []
 
 doors = [["livingroom", "diningarea"], 
          ["diningarea", "kitchen"], 
          ["diningarea", "bathroom"], 
          ["livingroom", "entryway"], 
          ["entryway", "parentsbedroom"], 
-         ["entryway", "garage"]]
+         ["entryway", "garage"],
+         ["backyard", "garden"]]
 
 
 playersbedroomDescription = ["You look around the bedroom you've lived in for as long as you can remember.",
@@ -68,19 +79,24 @@ playersbedroomDescription = ["You look around the bedroom you've lived in for as
                              "And you get back to your mission of saving the house."] # a list of the lines that are used for the description of the room
 
 quickDescriptions = {
-    "playersbedroom" : "There's a closet in the corner of the room, and a bedside45 table."
+    "playersbedroom" : "There's a closet in the corner of the room, and a bedside table."
 }
 
-cantBeCarried = ["clothing", "watch", "dog", "google home", "napkins", "towels", "hand_towels", "bedroom_door", "backpack"]
+cantBeCarried = ["clothing", "watch", "dog", "google home", "napkins", "towels", "hand_towels", "bedroom_door", "backpack", "sink", "water", "garden_hose", "movable_shower_head", "toilet", "stool", "ladder", "window"]
 movable = ["stool", "ladder"]
+staticWaterSources = ["sink", "water", "garden_hose", "movable_shower_head"]
 
-cloth = []
-waterSources = []
-cleanWaterSources = []
+allWaterSources = ["sink", "water", "garden_hose", "movable_shower_head", "toilet", "water_bottle", "flower_vase"]
+
+cloth = ["napkin", "hand_towel", "towel"]
+wetCloth = ["wet_napkin", "wet_hand_towel", "wet_towel"]
+waterContainers = ["empty_water_bottle", "empty_water_bowl", "empty_vase", "empty_watering_can"] # add hands
+cleanWaterSources = ["water_bottle", "flower_vase"]
 crafting = []
 
-house = [playersbedroom, livingroom, diningarea, kitchen, bathroom, entryway, parentsbedroom, garage, backyard]
-housestr = ["playersbedroom", "livingroom", "diningarea", "kitchen", "bathroom", "entryway", "parentsbedroom", "garage", "backyard"]
+containerExceptions = ["shelves"]
+house = [playersbedroom, livingroom, diningarea, kitchen, bathroom, entryway, parentsbedroom, garage, backyard, garden, streets]
+housestr = ["playersbedroom", "livingroom", "diningarea", "kitchen", "bathroom", "entryway", "parentsbedroom", "garage", "backyard", "garden", "streets"]
 # house array: 
 # 0: player's bedroom
 # 1: living room
@@ -91,6 +107,8 @@ housestr = ["playersbedroom", "livingroom", "diningarea", "kitchen", "bathroom",
 # 6: parentsbedroom
 # 7: garage
 # 8: backyard
+# 9: garden
+# 10: streets
 
 
 # functions
@@ -273,6 +291,7 @@ while(playing):
             usermove.replace("use ", "")
 
     usermove = input("\n\n\nWhat would you like to do?   ").lower()
+    turns += 1
 
     # input processing 
 
@@ -283,33 +302,144 @@ while(playing):
         usermove = usermove.replace("use ", "")
         usermove = usermove.strip()
         if ' ' in usermove:
+            things = usermove.split(' ')
             # interactions between two objects
-            spacereached = False
-            things = ["", ""]
-            for i in range(len(usermove)):
-                if spacereached:
-                    things[1] += usermove[i]
-                else:
-                    if usermove[i] == ' ':
-                        spacereached = True
-                    else:
-                        things[0] += usermove[i]
+            #spacereached = False
+            #things = ["", ""]
+            #for i in range(len(usermove)):
+            #    if spacereached:
+            #        things[1] += usermove[i]
+            #    else:
+            #        if usermove[i] == ' ':
+            #            spacereached = True
+            #        else:
+            #            things[0] += usermove[i]
             # add automated crafting recipes in here
+
+            for i in range(2):
+                if things[i] in cloth and things[i] in inventory:
+                    if things[i-1] in allWaterSources:
+                        if things[i-1] in staticWaterSources:
+                            if things[i-1] in house[locationint]:
+                                print("You soak the "+things[i]+" with water from the "+things[i-1])
+                                inventory.remove(things[i])
+                                inventory.append("wet_"+things[i])
+                                commWorked = True
+                        elif things[i-1] in cleanWaterSources:
+                            if things[i-1] in inventory: ## the water source is in the player's inventory
+                                print("You soak the "+things[i]+" with water from the "+things[i-1])
+                                inventory.remove(things[i])
+                                inventory.append("wet_"+things[i])
+                                inventory.remove(things[i-1])
+                                inventory.append("empty_"+things[i-1])
+                                commWorked = True
+                            elif things[i-1] in house[locationint]: ## the water source is in the same room as the player
+                                print("You soak the "+things[i]+" with water from the "+things[i-1])
+                                inventory.remove(things[i])
+                                inventory.append("wet_"+things[i])
+                                house[locationint].remove(things[i-1])
+                                house[locationint].append("empty_"+things[i-1])
+                                commWorked = True
+                            elif container+"//"+things[i-1] in house[locationint]: ## the water source is in the same container as the player
+                                print("You soak the "+things[i]+" with water from the "+things[i-1])
+                                inventory.remove(things[i])
+                                inventory.append("wet_"+things[i])
+                                house[locationint].remove(container+"//"+things[i-1])
+                                house[locationint].append(container+"//empty_"+things[i-1])
+                                commWorked = True
+                        # is the water source 
+                        
+            for i in range(2): 
+                if things[i] in waterContainers and things[i-1] in staticWaterSources:
+                    if things[i] in inventory and things[i-1] in house[locationint]:
+                        print("You refill the "+things[i].replace("_", " ")+" with water from the "+things[i-1].replace("_", " "))
+                        inventory.remove(things[i])
+                        inventory.append(things[i].replace("empty_", ""))
+                        commWorked = True
 
             # custom crafting recipes:
             if "keys" in things and "bedroom_door" in things:
                 if "bedroom_door" in house[locationint] and "keys" in inventory:
                     print("You unlock the door to your room.")
+                    print("You can now head to the livingroom")
                     inventory.remove("keys")
                     playersbedroom.remove("bedroom_door")
                     doors.append(["playersbedroom", "livingroom"])
                     commWorked = True
+
+            if "keys" in things and "locked_sliding_door" in things:
+                if "locked_sliding_door" in house[locationint] and "keys" in inventory:
+                    print("You unlock the sliding door between the backyard and the livingroom")
+                    inventory.remove("keys")
+                    livingroom.remove("locked_sliding_door")
+                    backyard.remove("locked_sliding_door")
+                    doors.append(["livingroom", "backyard"])
+                    commWorked = True
+            
+            for i in range(2):
+                if things[i] in cloth and things[i-1] == "gutter":
+                    if "gutter" in house[locationint] and things[i] in inventory:
+                        if "ladder" in house[locationint]:
+                            print("You get up on the ladder and clog the gutter with a "+things[i])
+                            inventory.remove(things[i])
+                            backyard.remove("gutter")
+                            backyard.append("clogged_gutter")
+                            commWorked = True
+
+            if "clogged_gutter" in things and "garden_hose" in things:
+                if "clogged_gutter" in house[locationint] and "garden_hose" in house[locationint]:
+                    print("You use the garden hose to fill the gutter with water")
+                    backyard.remove("clogged_gutter")
+                    backyard.append("flooded_gutter")
+                    commWorked = True
+                    gutterProtected = True
+            
+            if "keychain" in things and "front_door" in things:
+                if "keychain" in inventory and "front_door" in house[locationint]:
+                    print("You unlock the front door.")
+                    doors.append("streets", house[locationint])
+                    house[locationint].remove("frontdoor")
+                    commWorked = True
+                elif "keychain" in inventory and container+"//front_door" in house[locationint]:
+                    print("You unlock the front door.")
+                    doors.append(["streets", housestr[locationint]+"//"+container])
+                    house[locationint].remove(container+"//front_door")
+                    commWorked = True
+
+            for i in range(2):
+                if things[i] in wetCloth and (things[i-1] == "window" or things[i-1] == "front_door"):
+                    if things[i-1] in house[locationint] and things[i] in inventory:
+                        if things[i-1] == "window":
+                            print("You hang up the "+things[i].replace("_", " ")+" over the window to protect it.")
+                            inventory.remove(things[i])
+                            house[locationint].remove("window")
+                            house[locationint].append("protected_window")
+                            commWorked = True
+                            windowsSecured += 1
+                        elif things[i-1] == "front_door":
+                            print("You stuff the"+things[i].replace("_", " ")+"in the gap between the floor and the bottom of the door.")
+                            inventory.remove(things[i])
+                            house[locationint].remove("front_door")
+                            house[locationint].append("protected_front_door")
+                            commWorked = True
 
         else:
             if usermove in inventory: # is the item in the player's inventory?
                 if usermove == "phone":
                     noPower = usephone(noPower)
                     commWorked = True
+                if usermove == "remote":
+                    print("You press a button on the remote, and the back garage door opens.")
+                    print("You can now go to the backyard from the garage")
+                    doors.append(["garage", "backyard"])
+                    commWorked = True
+                if usermove == "dog":
+                    print("ಠಿ_ಠ")
+                    easterEggs += 1
+                    commWorked = True
+                if usermove == "handbook":
+                    print("hey, this isn't ready!")
+                    easterEggs += 1
             else:
                 if usermove in house[locationint]: # is the item in the room that the player's currently in?
 
@@ -332,6 +462,17 @@ while(playing):
                         print("you slide the watch straps around your wrist.")
                         commWorked = True
 
+                    if usermove in staticWaterSources:
+                        if not(dirtyWatah):
+                            print("You try using the "+usermove+".")
+                            print("There is some water that runs, but it's way too filthy for you to drink safely.")
+                            print("You might be able to use it to protect the house, but definitely not to drink.")
+                            dirtyWatah = True
+                        else:
+                            print("The water's nowhere near clean enough to drink.")
+                            print("You can only use it to protect the house.")
+                        commWorked = True
+
                 elif container+"//"+usermove in house[locationint]:
                     if usermove == "watch":
                         print("you slide the watch on your wrist or whatever")
@@ -348,14 +489,25 @@ while(playing):
         #    location = room+"//"+usermove
         for i in range(len(house[locationint])):
             if "!"+usermove+"!" == house[locationint][i]:
-                container = usermove
-                location = room+"//"+usermove
-                print("You look inside the "+usermove)
-                look("movement")
-                commWorked = True
-                if usermove == "closet":
-                    if hasClothes:
-                        print("You're already wearing some clothing.")
+                if usermove not in containerExceptions:
+                    container = usermove
+                    location = room+"//"+usermove
+                    print("You look inside the "+usermove)
+                    look("movement")
+                    commWorked = True
+                    if usermove == "closet":
+                        if hasClothes:
+                            print("You're already wearing some clothing.")
+                elif usermove in containerExceptions:
+                    if usermove == "shelves":
+                        if "stool" in house[locationint] or "ladder" in house[locationint]:
+                            container = usermove
+                            location = room+"//"+usermove
+                            print("You step up on the stool and look at the top shelf")
+                            look("movement")
+                            commWorked = True
+                        else:
+                            print("You can't reach that high, you need something to stand on.")
         if not(commWorked):
             print("you can't do that")
                         
@@ -364,6 +516,9 @@ while(playing):
         commWorked = False
 
         usermove = usermove.replace("grab ", "")
+
+        if usermove.replace("s", "") in cloth:
+            usermove = usermove.replace("s", "") + "s"
 
         if usermove in house[locationint] or container+"//"+usermove in house[locationint]: # if the item is in the room or container the player is in
             if "//" not in usermove:
@@ -394,19 +549,27 @@ while(playing):
                     wait(1.5, debugMode)
                     print("And you can only take the cage five paces before having to rest.")
 
+                elif usermove == "front_door":
+                    print("that's actually pretty funny, I'll allow that")
+
                 if len(inventory)-1 < invcapacity:
 
                     if usermove not in cantBeCarried:
                         inventory.append(usermove) #add the item to the players inventory
 
-                    if usermove in house[locationint]: #remove the item from the room
-                        house[locationint].remove(usermove)
-                    elif container+"//"+usermove in house[locationint]:
-                        house[locationint].remove(container+"//"+usermove)
+                    if usermove.replace("s", "") not in cloth:
+                        if usermove in house[locationint]: #remove the item from the room
+                            house[locationint].remove(usermove)
+                        elif container+"//"+usermove in house[locationint]:
+                            house[locationint].remove(container+"//"+usermove)
 
                     if usermove == "watch":
                         print("You slide the watch onto your wrist") 
                         hasWatch = True
+
+                    elif usermove.replace("s", "") in cloth:
+                        print("You grab one "+usermove.replace("s", "")+" from the stack.")
+                        inventory.append(usermove.replace("s", ""))
 
                     else:
                         if not(usermove in cantBeCarried):
@@ -440,7 +603,7 @@ while(playing):
         usermove = usermove.replace("goto ", "")
         usermove = usermove.replace("move ", "")
         for i in range(len(doors)):
-            if room in doors[i] and usermove in doors[i]:
+            if location in doors[i] and usermove in doors[i]:
                 room = usermove
                 location = room
                 locationint = housestr.index(usermove)
@@ -448,11 +611,57 @@ while(playing):
                     print("You walk to the "+room)
                     look("movement")
                 moved = True
+                if room not in roomsExplored:
+                    roomsExplored.append(room)
+                if room == "streets":
+                    for j in range(len(doors)):
+                        if doors[j][0] == "streets" and doors[j][1] != "entryway":
+                            easterEggs += 1
+                            playing = False
+                            print("Congratulations! You finished the game, with ending:")
+                            print("How did we get here?")
+                        elif doors[j][0] == "streets" and doors[j][1] == "entryway":
+                            playing = False
+                            print("Congratulations!")
+                            print("You managed to get through the entire game!")
         if room != usermove:
             print("You can't move to the" +usermove+ " from the "+room)
         elif not(moved):
             print("you can't do that")
             
+    elif usermove.startswith("drag "):
+        commWorked = False
+        usermove = usermove.replace("drag ", "")
+        things = usermove.split(' ')
+        #for i in range(len(usermove)):
+        #    if spacereached:
+        #        things[1] += usermove[i]
+        #    else:
+        #        if usermove[i] == ' ':
+        #            spacereached = True
+        #        else:
+        #            things[0] += usermove[i]
+                    
+        nearbyrooms = []
+        for i in range(len(doors)):
+            if location == doors[i][0]:
+                nearbyrooms.append(doors[i][1])
+            elif location == doors[i][1]:
+                nearbyrooms.append(doors[i][0]) 
+
+        if things[0] in movable:
+            if things[1] in nearbyrooms:
+                house[locationint].remove(things[0])
+                room = things[1]
+                location = things[1]
+                locationint = housestr.index(things[1])
+                house[locationint].append(things[0])
+                commWorked = True
+                print("You drag the "+things[0]+" to the "+things[1])
+                look("movement")
+        if not(commWorked):
+            print("you can't do that")
+                
 
 
     elif usermove.startswith("look"):
@@ -483,6 +692,10 @@ while(playing):
         print("gochu. cya!")
         quit()
 
+    elif usermove == "pee yourself":
+        print("You pee yourself.")
+        easterEggs += 1
+
     else:
 
         placeholder = ""  # what happens if the command is not recognized
@@ -494,3 +707,12 @@ while(playing):
             else:
                 spaceSeen = True
         print("sorry, I don't recognize the command \""+placeholder+"\".")
+
+print("\n\n\nPost Game Stats:")
+print("Rooms Explored: "+str(roomsExplored))
+print("Moves taken: "+str(turns))
+print("Windows Secured: "+str(windowsSecured)+"/4")
+if gutterProtected:
+    print("Gutter Protected: Yes")
+else:
+    print("Gutter Protected: No")
